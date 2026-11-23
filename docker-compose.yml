@@ -1,0 +1,25 @@
+# Two services that talk to each other on an internal network:
+# "api" is our Express server, "mongo" is a ready MongoDB database.
+services:
+  api:
+    build: ./server          # build from server/Dockerfile
+    ports:
+      - "5000:5000"          # host port : container port
+    environment:
+      PORT: 5000
+      # "mongo" is the other service's name; Docker resolves it like a domain.
+      MONGO_URI: mongodb://mongo:27017/classflow
+      JWT_SECRET: change-me-to-a-long-random-string
+      JWT_EXPIRES_IN: 7d
+      CLIENT_URL: http://localhost:5173
+    depends_on:
+      - mongo                # start mongo before the api
+  mongo:
+    image: mongo:7           # official MongoDB image, no Dockerfile needed
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db  # keep the data even after the container stops
+
+volumes:
+  mongo-data:
