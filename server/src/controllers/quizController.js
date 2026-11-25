@@ -43,10 +43,26 @@ async function remove(req, res, next) {
 
 async function grade(req, res, next) {
   try {
-    res.json(await quizService.gradeQuiz(req.params.id, req.body.answers));
+    res.status(201).json(await quizService.gradeQuiz(req.user.id, req.params.id, req.body.answers));
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { list, getBySlug, create, update, remove, grade };
+async function myAttempts(req, res, next) {
+  try {
+    res.json(await quizService.listMyAttempts(req.user.id, req.query));
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function quizAttempts(req, res, next) {
+  try {
+    res.json(await quizService.listQuizAttemptsForOwner(req.user.id, req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { list, getBySlug, create, update, remove, grade, myAttempts, quizAttempts };
