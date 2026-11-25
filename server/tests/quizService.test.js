@@ -1,4 +1,5 @@
 jest.mock("../src/models/Instructor", () => ({ findOne: jest.fn() }));
+jest.mock("../src/models/QuizAttempt", () => ({ create: jest.fn(), find: jest.fn() }));
 jest.mock("../src/models/Quiz", () => {
   function MockQuiz(data) {
     Object.assign(this, data);
@@ -12,6 +13,7 @@ jest.mock("../src/models/Quiz", () => {
 
 const Instructor = require("../src/models/Instructor");
 const Quiz = require("../src/models/Quiz");
+const QuizAttempt = require("../src/models/QuizAttempt");
 const quizService = require("../src/services/quizService");
 
 // A chainable stand-in for a Mongoose query.
@@ -140,12 +142,16 @@ describe("deleteQuiz", () => {
 });
 
 describe("gradeQuiz", () => {
+  beforeEach(() => {
+    QuizAttempt.create.mockImplementation(async (data) => ({ _id: "attempt-1", ...data }));
+  });
+
   test("gives full marks for a perfect submission", async () => {
     Quiz.findById.mockResolvedValue(sampleQuiz);
 
-    const result = await quizService.gradeQuiz("quiz-1", [1, 1]);
+    const result = await quizService.gradeQuiz("user-9", "quiz-1", [1, 1]);
 
-    expect(result).toMatchObject({ total: 2, correct: 2, scorePercent: 100 });
+    expect(result).toMatchObject({ attemptId: "attempt-1", total: 2, correct: 2, scorePercent: 100 });
     expect(result.perQuestion).toEqual([
       { question: 0, correct: true },
       { question: 1, correct: true },
@@ -155,7 +161,7 @@ describe("gradeQuiz", () => {
   test("grades partial and wrong answers honestly", async () => {
     Quiz.findById.mockResolvedValue(sampleQuiz);
 
-    const result = await quizService.gradeQuiz("quiz-1", [0, 1]);
+    const result = await quizService.gradeQuiz("user-9", "quiz-1", [0, 1]);
 
     expect(result).toMatchObject({ total: 2, correct: 1, scorePercent: 50 });
     expect(result.perQuestion[0].correct).toBe(false);
@@ -164,7 +170,7 @@ describe("gradeQuiz", () => {
   test("missing answers count as wrong", async () => {
     Quiz.findById.mockResolvedValue(sampleQuiz);
 
-    const result = await quizService.gradeQuiz("quiz-1", []);
+    const result = await quizService.gradeQuiz("user-9", "quiz-1", []);
 
     expect(result.correct).toBe(0);
     expect(result.perQuestion).toHaveLength(2);
@@ -172,17 +178,65 @@ describe("gradeQuiz", () => {
 
   test("rejects missing or unpublished quizzes with 404", async () => {
     Quiz.findById.mockResolvedValue(null);
-    await expect(quizService.gradeQuiz("quiz-1", [])).rejects.toMatchObject({ statusCode: 404 });
+    await expect(quizService.gradeQuiz("user-9", "quiz-1", [])).rejects.toMatchObject({ statusCode: 404 });
 
     Quiz.findById.mockResolvedValue({ ...sampleQuiz, published: false });
-    await expect(quizService.gradeQuiz("quiz-1", [])).rejects.toMatchObject({ statusCode: 404 });
+    await expect(quizService.gradeQuiz("user-9", "quiz-1", [])).rejects.toMatchObject({ statusCode: 404 });
   });
 
   test("a quiz with no questions scores 0 percent", async () => {
     Quiz.findById.mockResolvedValue({ ...sampleQuiz, questions: [] });
 
-    const result = await quizService.gradeQuiz("quiz-1", []);
+    const result = await quizService.gradeQuiz("user-9", "quiz-1", []);
 
     expect(result).toMatchObject({ total: 0, correct: 0, scorePercent: 0 });
+  });
+
+  test("persists the attempt with the quiz, user and score", async () => {
+    Quiz.findById.mockResolvedValue(sampleQuiz);
+
+    await quizService.gradeQuiz("user-9", "quiz-1", [1, 0]);
+
+    expect(QuizAttempt.create).toHaveBeenCalledWith({
+      quiz: "quiz-1",
+      user: "user-9",
+      answers: [1, 0],
+      correct: 1,
+      total: 2,
+      scorePercent: 50,
+    });
+  });
+});
+
+describe("listMyAttempts", () => {
+  test("only queries attempts that belong to the user", async () => {
+    QuizAttempt.find.mockReturnValue(fakeQuery([{ scorePercent: 50 }]));
+
+    const result = await quizService.listMyAttempts("user-9", {});
+
+    expect(QuizAttempt.find).toHaveBeenCalledWith({ user: "user-9" });
+    expect(result).toEqual({ count: 1, attempts: [{ scorePercent: 50 }] });
+  });
+});
+
+describe("listQuizAttemptsForOwner", () => {
+  test("returns attempts when the instructor owns the quiz", async () => {
+    Instructor.findOne.mockResolvedValue({ _id: "instructor-1" });
+    Quiz.findById.mockResolvedValue({ _id: "quiz-1", instructor: "instructor-1" });
+    QuizAttempt.find.mockReturnValue(fakeQuery([{ scorePercent: 100 }]));
+
+    const result = await quizService.listQuizAttemptsForOwner("user-1", "quiz-1");
+
+    expect(QuizAttempt.find).toHaveBeenCalledWith({ quiz: "quiz-1" });
+    expect(result.count).toBe(1);
+  });
+
+  test("rejects instructors who do not own the quiz", async () => {
+    Instructor.findOne.mockResolvedValue({ _id: "instructor-1" });
+    Quiz.findById.mockResolvedValue({ _id: "quiz-1", instructor: "someone-else" });
+
+    await expect(
+      quizService.listQuizAttemptsForOwner("user-1", "quiz-1")
+    ).rejects.toMatchObject({ statusCode: 403 });
   });
 });
