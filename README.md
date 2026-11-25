@@ -1,77 +1,77 @@
 # ClassFlow
 
-A lightweight classroom platform for instructors and trainees: quizzes, assignments, submissions, and progress tracking in one place.
+## 1. Description
 
-Built with the MERN stack (MongoDB, Express.js, React, Node.js).
+A lightweight classroom platform for instructors and trainees, built to put class content, quizzes and progress tracking in one place. Instructors manage quizzes with automatic grading; trainees take published quizzes and get their score instantly.
 
-**Status:** In active development.
+**Status:** In active development. The API, Docker setup and quizzes are working; the frontend (`client/`) has not been started yet.
 
-## Features (MVP)
+## 2. Technologies and Versions
 
-- Instructor and trainee accounts with JWT authentication and roles
-- Quizzes: create, publish, and auto-grade objective questions
-- Assignments: publish briefs and receive trainee submissions
-- Trainee dashboard with personal progress overview
-- Instructor dashboard to track submissions across groups
+- **Backend (`server/`)**: Node.js with Express ^4.19.2, MongoDB with Mongoose ^8.5.1, JWT ^9.0.2 (auth), bcryptjs ^2.4.3, google-auth-library ^9.11.0 (Google sign-in), Nodemailer ^6.9.14 (password-reset emails), dotenv ^16.4.5, cors ^2.8.5
+- **DevOps**: Docker and docker compose for the API + MongoDB
+- **Tests**: Jest ^30.5.2, nodemon ^3.1.4 (dev)
+- **Frontend (`client/`)**: placeholder folder; the client has not been built yet
 
-## Tech Stack
+## 3. Requirements and Dependencies
 
-- **Frontend:** React (Vite), Tailwind CSS
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB with Mongoose
-- **Auth:** JWT (access + refresh tokens)
-- **DevOps:** Docker and docker compose for the API and database
-- **Deployment (planned):** Vercel (client), Render (API), MongoDB Atlas (free tier)
+- Docker (for the easiest run), or Node.js 20+ and MongoDB for a local run
+- Server dependencies are installed with `npm install` inside `server/` (see `server/package.json`)
 
-## Project Structure
+## 4. Installation and Run Steps
 
-```
-classflow/
-├── client/            # React frontend (Vite + Tailwind CSS)
-├── server/            # Express REST API (Node.js)
-│   ├── src/           # routes, controllers, services, models, middleware, utils
-│   └── Dockerfile     # API container image
-├── docs/              # Planning notes, API reference, schema drafts
-├── docker-compose.yml # Starts the API + MongoDB together
-├── .gitignore
-└── README.md
-```
-
-## Getting Started
-
-### Run with Docker (easiest)
-
-Only Docker needs to be installed. One command builds the API image and starts
-it together with a MongoDB container:
+**With Docker (easiest)**
 
 ```bash
+git clone https://github.com/MostafaNegm222/classflow.git
+cd classflow
 docker compose up --build
 ```
 
 - API health check: http://localhost:5000/api/health
 - Stop: Ctrl+C, then `docker compose down` (add `-v` to also delete the database data)
 
-### Run locally (without Docker)
-
-Requires Node.js 20+ and MongoDB running locally (or a MongoDB Atlas URI).
+**Locally (without Docker)**
 
 ```bash
 cd server
 npm install
-cp .env.example .env   # then fill in the values
+cp .env.example .env   # then fill in the values (see section 5)
 npm run dev
 ```
 
-Optional integrations read their values from `.env` (see `.env.example`):
-`GOOGLE_CLIENT_ID` for Google sign-in and `SMTP_*` for password-reset emails.
+## 5. Environment Variables
 
-## Roadmap
+Server `.env` (listed in `server/.env.example` with example values; no secrets are stored in the repo):
 
-- [x] Authentication with instructor/trainee roles (JWT, Google sign-in, password reset)
-- [x] Docker setup (API + MongoDB with docker compose)
-- [ ] Quiz creation and automatic grading
-- [ ] Assignment publishing and submissions
-- [ ] Instructor and trainee dashboards
-- [ ] CI/CD with GitHub Actions (planned)
-- [ ] AI study assistant for trainees (planned)
-- [ ] PostgreSQL reporting layer (planned)
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | API port (5000) |
+| `MONGO_URI` | MongoDB connection string (`mongodb://mongo:27017/classflow` inside compose) |
+| `JWT_SECRET` | Secret used to sign tokens |
+| `JWT_EXPIRES_IN` | Token lifetime (e.g. 7d) |
+| `GOOGLE_CLIENT_ID` | Google sign-in (OAuth 2.0 Web Client ID) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Password-reset emails |
+| `CLIENT_URL` | Where password-reset links point (the client app) |
+
+## 6. Usage and Main Features
+
+- **Auth**: email/password signup and login, Google sign-in, forgot/reset password by email, JWT-based sessions with instructor and trainee roles.
+- **Instructor profiles**: list and search instructors, and view each instructor's public profile.
+- **Quizzes**: instructors create, publish, edit and delete quizzes with objective questions; visitors see published quizzes without the answers; logged-in users submit their answers and get automatic grading with their score.
+- Server code follows a layered structure: routes -> controllers -> services -> Mongoose models, with a shared API features helper (filter/search/sort/pagination) and central error handling.
+
+Still planned: assignments and trainee submissions, progress dashboards, and the frontend client.
+
+## 7. Screenshots / Demo
+
+No live demo yet; the API runs locally or in Docker.
+
+## 8. Running Tests
+
+```bash
+cd server
+npm test
+```
+
+Jest suites cover the auth and quiz flows (see `server/tests/`).
