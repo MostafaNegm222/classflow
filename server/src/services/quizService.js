@@ -1,5 +1,6 @@
 const Instructor = require("../models/Instructor");
 const Quiz = require("../models/Quiz");
+const QuizAttempt = require("../models/QuizAttempt");
 const ApiFeatures = require("../utils/apiFeatures");
 
 const INSTRUCTOR_PUBLIC_FIELDS = "headline slug";
@@ -85,9 +86,10 @@ async function deleteQuiz(userId, quizId) {
   return { deleted: true };
 }
 
-// Grade a submission against a published quiz.
+// Grade a submission against a published quiz and keep the attempt
+// so trainee progress and instructor dashboards have data to show.
 // answers: array of chosen option indexes, aligned with the quiz's questions.
-async function gradeQuiz(quizId, answers = []) {
+async function gradeQuiz(userId, quizId, answers = []) {
   const quiz = await Quiz.findById(quizId);
   if (!quiz || !quiz.published) throw fail(404, "Quiz not found");
   const perQuestion = quiz.questions.map((question, index) => ({
@@ -96,12 +98,38 @@ async function gradeQuiz(quizId, answers = []) {
   }));
   const correct = perQuestion.filter((q) => q.correct).length;
   const total = quiz.questions.length;
-  return {
-    total,
+  const scorePercent = total === 0 ? 0 : Math.round((correct / total) * 100);
+  const attempt = await QuizAttempt.create({
+    quiz: quiz._id,
+    user: userId,
+    answers,
     correct,
-    scorePercent: total === 0 ? 0 : Math.round((correct / total) * 100),
-    perQuestion,
-  };
+    total,
+    scorePercent,
+  });
+  return { attemptId: attempt._id, total, correct, scorePercent, perQuestion };
+}
+
+// Every attempt the logged-in user has made, newest first.
+async function listMyAttempts(userId, queryString = {}) {
+  const baseQuery = QuizAttempt.find({ user: userId }).populate("quiz", "title slug");
+  const features = new ApiFeatures(baseQuery, queryString).sort().paginate();
+  const attempts = await features.mongooseQuery;
+  return { count: attempts.length, attempts };
+}
+
+// Every attempt on one quiz, visible only to the instructor who owns it.
+async function listQuizAttemptsForOwner(userId, quizId) {
+  const profile = await ownInstructorProfile(userId);
+  const quiz = await Quiz.findById(quizId);
+  if (!quiz) throw fail(404, "Quiz not found");
+  if (quiz.instructor.toString() !== profile._id.toString()) {
+    throw fail(403, "You can only see attempts on your own quizzes");
+  }
+  const attempts = await QuizAttempt.find({ quiz: quiz._id })
+    .populate("user", "name slug")
+    .sort("-createdAt");
+  return { count: attempts.length, attempts };
 }
 
 module.exports = {
@@ -111,4 +139,6 @@ module.exports = {
   updateQuiz,
   deleteQuiz,
   gradeQuiz,
+  listMyAttempts,
+  listQuizAttemptsForOwner,
 };
