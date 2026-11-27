@@ -4,7 +4,7 @@
 
 A lightweight classroom platform for instructors and trainees, built to put class content, quizzes and progress tracking in one place. Instructors manage quizzes with automatic grading; trainees take published quizzes and get their score instantly.
 
-**Status:** In active development. The API, Docker setup and quizzes are working; the frontend (`client/`) has not been started yet.
+**Status:** In active development. The API, Docker setup, quizzes and assignments are working. The Angular frontend (`client/`) is started: browsing the published quiz catalog works against the local API; login and quiz-taking screens are next.
 
 ## 2. Technologies and Versions
 
@@ -61,7 +61,7 @@ Server `.env` (listed in `server/.env.example` with example values; no secrets a
 - **Quizzes**: instructors create, publish, edit and delete quizzes with objective questions; visitors see published quizzes without the answers; logged-in users submit their answers and get automatic grading with their score.
 - Server code follows a layered structure: routes -> controllers -> services -> Mongoose models, with a shared API features helper (filter/search/sort/pagination) and central error handling.
 
-Still planned: assignments and trainee submissions, progress dashboards, and the frontend client.
+Still planned: progress dashboards, submission grading, and the remaining frontend screens (login, taking quizzes, instructor dashboards).
 
 ## 7. Screenshots / Demo
 
