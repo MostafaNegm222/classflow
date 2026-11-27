@@ -1,0 +1,26 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1f2933;
+}
+
+.topbar {
+  background: #1a56db;
+  padding: 0.75rem 1.5rem;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.topbar a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.content {
+  max-width: 720px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+}
