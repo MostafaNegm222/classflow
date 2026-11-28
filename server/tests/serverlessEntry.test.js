@@ -1,8 +1,8 @@
-// Tests for the Vercel serverless entry (api/[[...path]].js).
+// Tests for the Vercel serverless entry (api/index.js).
 // The Express app and the DB connector are replaced with fakes so the
 // handler's connection-sharing and failure behavior are checked directly.
 
-const HANDLER_PATH = "../api/[[...path]].js";
+const HANDLER_PATH = "../api/index.js";
 
 function loadHandler({ connectImpl } = {}) {
   jest.resetModules();
