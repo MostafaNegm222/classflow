@@ -10,7 +10,7 @@ import { ApiService, Quiz } from './api';
     @if (loading()) {
       <p>Loading quizzes...</p>
     } @else if (error()) {
-      <p class="error">Could not load quizzes. Is the API running on localhost:5000?</p>
+      <p class="error">Could not load quizzes. Please try again later.</p>
     } @else if (quizzes().length === 0) {
       <p>No published quizzes yet.</p>
     } @else {
