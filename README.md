@@ -48,6 +48,7 @@ Server `.env` (listed in `server/.env.example` with example values; no secrets a
 | --- | --- |
 | `PORT` | API port (5000) |
 | `MONGO_URI` | MongoDB connection string (`mongodb://mongo:27017/classflow` inside compose) |
+| `DB_NAME` | Optional: pin the database inside the cluster the URI points to (production uses `classflow_prod`) |
 | `JWT_SECRET` | Secret used to sign tokens |
 | `JWT_EXPIRES_IN` | Token lifetime (e.g. 7d) |
 | `GOOGLE_CLIENT_ID` | Google sign-in (OAuth 2.0 Web Client ID) |
@@ -65,7 +66,7 @@ Still planned: progress dashboards, submission grading, and the remaining fronte
 
 ## 7. Screenshots / Demo
 
-No live demo yet; the API runs locally or in Docker.
+The API is deployed on Vercel: https://classflow-peach.vercel.app (health check: `/api/health`). It uses a MongoDB Atlas cluster with a dedicated database (`classflow_prod`) and an Atlas user limited to that database. The Angular client is not deployed yet; run it locally against the local API.
 
 ## 8. Running Tests
 
