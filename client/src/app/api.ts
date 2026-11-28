@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
 export interface QuizQuestion {
   text: string;
@@ -21,8 +22,9 @@ interface QuizListResponse {
   quizzes: Quiz[];
 }
 
-// The Express API runs locally on port 5000 (see server/src/index.js).
-const API_URL = 'http://localhost:5000/api';
+// Development points at the local Express server; the production build
+// swaps in environment.prod.ts with the deployed API URL.
+const API_URL = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
