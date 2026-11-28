@@ -12,7 +12,21 @@ async function connectDB() {
   if (process.env.DB_NAME) {
     options.dbName = process.env.DB_NAME;
   }
-  await mongoose.connect(uri, options);
+  try {
+    await mongoose.connect(uri, options);
+  } catch (err) {
+    // Server-selection failures hide the per-host causes. Log each host
+    // with its own error so Atlas network/user problems are visible
+    // without printing the connection string itself.
+    const servers = err.reason && err.reason.servers;
+    if (servers) {
+      for (const server of servers.values()) {
+        const detail = server.error ? server.error.message : "unknown error";
+        console.error(`MongoDB host ${server.host}:${server.port}: ${detail}`);
+      }
+    }
+    throw err;
+  }
   console.log(`MongoDB connected (database: ${mongoose.connection.name})`);
 }
 
